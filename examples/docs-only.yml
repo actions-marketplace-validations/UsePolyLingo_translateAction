@@ -1,0 +1,25 @@
+name: translate docs only
+
+on:
+  push:
+    paths:
+      - 'docs/*.md'
+
+permissions:
+  contents: write
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: UsePolyLingo/translate-action@v1
+        with:
+          api_key: ${{ secrets.POLYLINGO_API_KEY }}
+          with_messages: false
+          with_docs: true
+          docs_dir: docs
+          docs_source_files: '*.md'
+          commit: true
+          commit_add_paths: docs

@@ -1,0 +1,31 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dry-run translate (fixture)
+        env:
+          POLYLINGO_ROOT: ${{ github.workspace }}/test/fixture
+          POLYLINGO_DRY_RUN: '1'
+          POLYLINGO_LOCALES: es
+          INPUT_WITH_DOCS: 'true'
+          POLYLINGO_DOCS_SOURCE_FILES: README.md
+        run: node src/run-all.mjs

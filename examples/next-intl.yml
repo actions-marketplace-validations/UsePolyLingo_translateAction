@@ -1,0 +1,31 @@
+# Typical Next.js + next-intl layout: frontend/messages/en.json and repo-root docs/
+name: i18n (next-intl)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/messages/en.json'
+      - 'docs/*.md'
+
+permissions:
+  contents: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: UsePolyLingo/translate-action@v1
+        with:
+          api_key: ${{ secrets.POLYLINGO_API_KEY }}
+          messages_dir: frontend/messages
+          locale_concurrency: 3
+          delta: true
+          with_docs: true
+          docs_dir: docs
+          commit: true
+          commit_add_paths: frontend/messages docs

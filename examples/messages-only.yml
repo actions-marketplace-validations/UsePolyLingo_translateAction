@@ -1,0 +1,27 @@
+name: i18n messages only
+
+on:
+  push:
+    paths:
+      - 'locales/en.json'
+
+permissions:
+  contents: write
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: UsePolyLingo/translate-action@v1
+        with:
+          api_key: ${{ secrets.POLYLINGO_API_KEY }}
+          messages_dir: locales
+          source_file: locales/en.json
+          with_docs: false
+          delta: true
+          commit: true
+          commit_add_paths: locales

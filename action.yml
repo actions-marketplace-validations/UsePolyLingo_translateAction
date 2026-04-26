@@ -1,0 +1,121 @@
+name: PolyLingo Translate
+description: Translate flat JSON locale files and Markdown docs in CI using PolyLingo (official Node.js SDK).
+author: UsePolyLingo
+branding:
+  icon: globe
+  color: green
+
+inputs:
+  api_key:
+    description: PolyLingo API key (store as a secret).
+    required: true
+  api_url:
+    description: Optional API base URL (default https://api.usepolylingo.com/v1).
+    required: false
+    default: ''
+  messages_dir:
+    description: Path to messages directory relative to repo root (default frontend/messages).
+    required: false
+    default: frontend/messages
+  source_file:
+    description: English source JSON path relative to repo root (default <messages_dir>/en.json).
+    required: false
+    default: ''
+  locales:
+    description: Comma-separated locale codes (default — built-in 29 marketing locales).
+    required: false
+    default: ''
+  locale_concurrency:
+    description: How many locales to translate in parallel for JSON messages.
+    required: false
+    default: '3'
+  delta:
+    description: When true, only translate changed namespaces vs baseline file (saves tokens).
+    required: false
+    default: 'true'
+  with_messages:
+    description: When true, translate JSON message files under messages_dir.
+    required: false
+    default: 'true'
+  with_docs:
+    description: When true, also translate Markdown files under docs_dir.
+    required: false
+    default: 'true'
+  docs_dir:
+    description: Directory for English Markdown sources, relative to repo root (default docs).
+    required: false
+    default: docs
+  docs_source_files:
+    description: Comma-separated doc filenames or *.md for all .md in docs_dir root.
+    required: false
+    default: ''
+  commit:
+    description: When true, git commit and push translated files (requires contents write + token).
+    required: false
+    default: 'false'
+  commit_message:
+    description: Commit message when commit is true.
+    required: false
+    default: 'chore(i18n): sync translations'
+  commit_add_paths:
+    description: Paths passed to git add (space-separated globs/paths).
+    required: false
+    default: frontend/messages docs
+
+outputs:
+  locales_translated:
+    description: Comma-separated list of locales that finished message translation successfully.
+    value: ${{ steps.translate.outputs.locales_translated }}
+  files_changed:
+    description: Approximate count of files written (messages + docs).
+    value: ${{ steps.translate.outputs.files_changed }}
+  tokens_used:
+    description: Sum of reported API tokens (messages + docs jobs).
+    value: ${{ steps.translate.outputs.tokens_used }}
+
+runs:
+  using: composite
+  steps:
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22'
+
+    - name: Install action dependencies
+      shell: bash
+      run: npm ci --omit=dev
+      working-directory: ${{ github.action_path }}
+
+    - name: Translate with PolyLingo
+      id: translate
+      shell: bash
+      env:
+        POLYLINGO_API_KEY: ${{ inputs.api_key }}
+        POLYLINGO_API_URL: ${{ inputs.api_url }}
+        POLYLINGO_ROOT: ${{ github.workspace }}
+        POLYLINGO_MESSAGES_DIR_REL: ${{ inputs.messages_dir }}
+        POLYLINGO_SOURCE_FILE: ${{ inputs.source_file }}
+        POLYLINGO_LOCALES: ${{ inputs.locales }}
+        POLYLINGO_LOCALE_CONCURRENCY: ${{ inputs.locale_concurrency }}
+        POLYLINGO_DELTA: ${{ inputs.delta == 'true' && '1' || '' }}
+        POLYLINGO_FULL: ${{ inputs.delta == 'false' && '1' || '' }}
+        POLYLINGO_DOCS_DIR_REL: ${{ inputs.docs_dir }}
+        POLYLINGO_DOCS_SOURCE_FILES: ${{ inputs.docs_source_files }}
+      run: node "${{ github.action_path }}/src/run-all.mjs"
+
+    - name: Commit and push
+      if: inputs.commit == 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      run: |
+        set -e
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add ${{ inputs.commit_add_paths }}
+        if git diff --staged --quiet; then
+          echo "No translation changes to commit."
+          exit 0
+        fi
+        git commit -m "${{ inputs.commit_message }}"
+        git push

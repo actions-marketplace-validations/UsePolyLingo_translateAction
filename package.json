@@ -1,0 +1,15 @@
+{
+  "name": "translate-action",
+  "version": "1.0.0",
+  "private": false,
+  "description": "GitHub Action: translate i18n JSON and Markdown with PolyLingo (official polylingo Node SDK)",
+  "license": "MIT",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/UsePolyLingo/translate-action.git"
+  },
+  "dependencies": {
+    "polylingo": "^0.1.3"
+  }
+}
