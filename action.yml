@@ -101,6 +101,8 @@ runs:
         POLYLINGO_FULL: ${{ inputs.delta == 'false' && '1' || '' }}
         POLYLINGO_DOCS_DIR_REL: ${{ inputs.docs_dir }}
         POLYLINGO_DOCS_SOURCE_FILES: ${{ inputs.docs_source_files }}
+        INPUT_WITH_MESSAGES: ${{ inputs.with_messages }}
+        INPUT_WITH_DOCS: ${{ inputs.with_docs }}
       run: node "${{ github.action_path }}/src/run-all.mjs"
 
     - name: Commit and push
